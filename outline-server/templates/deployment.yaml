@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "outline-server.fullname" . }}
+  labels:
+    {{- include "outline-server.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "outline-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "outline-server.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-env
+          volumeMounts:
+            - name: outline-config-dir
+              mountPath: {{ .Values.workdir }}
+            - name: tls
+              mountPath: {{ .Values.workdir }}/{{ .Values.key }}
+              subPath: {{ .Values.key }}
+            - name: tls
+              mountPath: {{ .Values.workdir }}/{{ .Values.cert }}
+              subPath: {{ .Values.cert }}
+          ports:
+            - name: {{ .Values.server.portname }}
+              containerPort: {{ .Values.server.port }}
+              type: {{ .Values.server.type }}
+              protocol: {{ .Values.server.protocol }}
+            - name: {{ .Values.client.portname }}
+              containerPort: {{ .Values.client.port }}
+              type: {{ .Values.client.type }}
+              protocol: {{ .Values.client.protocol }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.server.port }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.server.port }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: outline-config-dir
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
+        - name: tls
+          secret: 
+            secretName: outline-tls
+            items:
+              - key: tls.crt
+                path: {{ .Values.cert }}
+              - key: tls.key
+                path: {{ .Values.key }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

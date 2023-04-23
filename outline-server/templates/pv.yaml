@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "outline-server.fullname" . }}
+spec:
+  capacity:
+    storage: {{ .Values.persistence.size | quote }}
+  volumeMode: Filesystem
+  accessModes: {{ .Values.persistence.accessModes }}
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: {{ .Values.persistence.storageClass }}
+  local:
+    path: {{ .Values.persistence.mountPath }} 
+  {{- with .Values.affinity.nodeAffinity }}
+  nodeAffinity:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
