@@ -8,6 +8,7 @@ Helm chart for deploy Outline server to Kubernetes
 ### 1. Create a TLS certificate using OpenSSL and copy to Kubernetes.
 
 ```console
+mkdir -p /opt/outline/data
 mkdir -p $HOME/outline/cert
 cd $HOME/outline/cert
 ```
@@ -57,5 +58,5 @@ export SHA=$(openssl x509 -noout -fingerprint \
 
 export EXTERNAL_IP="$(curl ifconfig.me)"
 
-echo \{\"apiUrl\":\"https://${EXTERNAL_IP}:30700/YourApiPrefix\",\"certSha256\":\"${SHA}\"\}
+echo \{\"apiUrl\":\"https://${EXTERNAL_IP}:30800/api\",\"certSha256\":\"${SHA}\"\}
 ```
